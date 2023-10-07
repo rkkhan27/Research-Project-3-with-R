@@ -1,0 +1,231 @@
+---
+title: "HW3: The Effect of Court-Ordered Hiring Quotas on the Composition of Police"
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+In McCrary's 2007 AER paper, he argued that the series of court-ordered racial 
+hiring quotas imposed on municipal police departments resulted in an increase of 14-percentage-points in the fraction of African American new hires at these police departments. But, the evidence on police performance after the change in the composition of police, is mixed.
+
+In this HW, we investigate the first research question, and analyze the relationship
+between the court-orders and the percentage of African American police officers.
+Because the data for this AER paper is confidential, this homework uses a simulated
+dataset prepared by an RA for this Signature Course (Xiaochen Sun). To simplify the 
+settings from the original paper, we set 1970 as the year for the court-order, and 
+provide two data points for each city: 1960 and 1990. 1960 is the "before" or "pre"  
+measure.  1990 is the "after" or "post" measure.
+
+The names and descriptions of variables in the data file `HW3_Data` are
+
+ Name                 Description
+ -------------------- ----------------------------------------------------------
+ `city_no`            Index of city
+ `year`               Two data points are provided here: 1960 and 1990
+ `order`              Factor variable indicating whether a city has the                              court-ordered hiring quotas (equal to "Quota")
+                      or not (equal to "No Quota")
+ `police_size`        Number of sworn officers (in logarithm format)
+ `pop`                Population of the city (Unit is in 100K)
+ `prop_black`         Proportion of African Americans in city population
+ `prop_police_blk`    Proportion of African Americans among police officers
+ `pcnt`               Number of police precincts
+ `south`              Factor variable indicating whether a city is in the
+                      south (equal to "In South") or not (equal to 
+                      "Not in South")
+ `region`             Census region (factor variable equal to "Region (#)")
+
+## Functions you may find helpful
+
+* table()
+* proportions()
+* group_by()
+* summarize()
+* summarize_at()
+* quantile()
+* mean()
+* hist()
+* boxplot()
+
+```{r}
+library(tidyverse)
+# ## Load the data with this chunk
+quotas <- read.csv("data/HW3_Data.csv", header = TRUE) %>%
+  mutate(order = factor(recode(order,
+                                `0` = "No Quota",
+                                `1` = "Quota")),
+         south = factor(recode(south,
+                                `0` = "Not in South",
+                                `1` = "In South")),
+         region = factor(recode(region,
+                                `1` = "Region 1",
+                                `2` = "Region 2",
+                                `3` = "Region 3",
+                                `4` = "Region 4",
+                                `5` = "Region 5")))
+# to check whether there is some missing value in any column
+quotas %>%
+  summarise_all(funs(mean(is.na(.))))
+```
+
+\newpage
+
+## Question 1 [10 pts]
+
+Assume a post-only cross sectional study design for this question - so focus on the level of the outcome in the post period rather than the change over time in the outcome.  With this study design, what is the specific causal question of interest for this study? What are the potential outcomes for a single police department? For cities experiencing the intervention what is the average factual outcome? For cities experiencing the intervention what is the average missing counterfactual outcome? Is this study a randomized experiment or an observational study? Explain why in a sentence or two. How would you estimate the average missing counterfactual for the cities experiencing the intervention with a post-only cross sectional study design? What assumption would need to hold for this to be an unbiased estimate?
+
+## Answer 1 Text
+SCQ: What is the impact of court ordered hiring "quota" relative to "no quota" on the percentage of African American Police Officers in municipal police departments in 1990. 
+Potential outcomes for a single police department are the changes of proportion (or percentage) of African American (AA) or Black Police Officers (BPO) resulting from court orders of quota or no quota for the BPO.
+For cities experiencing the intervention the average factual outcome is the average percentage of black police officers in their respective police departments.
+The average missing counterfactual: What the percentage of Black police officers would have been if there would have been no quota but all else remained the same?
+This is not a randomized study but is an observational study because the city police departments experiencing the intervention (quota hiring) and alternative (no-quota hiring) are not randomized to those conditions but arrive to the conditions of hiring in result of court orders which, at the first place, are not resulted from randomization.  
+In the post only study design the missing counterfactual for the cities experiencing the intervention of quota hiring will be calculated through the factual average of the proportion of the black police officers in the police departments of the cities where there is no quota hiring in 1990. 
+The assumption that must be held for this MCF to be an unbiased estimate is that there are no systematic differences between the intervention and the alternative groups that affect the outcome of percentage of the black police officers. Proportion of Blacks in the city population, number of police stations in the treatment cities, whether city is in south or not, in which region the city is located, and total population of the cities can be the possible confounders that may bias this causal effect of quota hiring if there are systematic differences between these baseline covariates in the treatment and control groups.   
+
+\newpage
+
+## Question 2 [6 pts]
+
+The court-ordered hiring quotas were imposed on the treated cities in 1970. Calculate the average percentage of African American police officers in the post-period (1990) in cities with and without court-ordered hiring quotas. 
+
+Calculate the average proportions and the corresponding standard deviations. Then, explain what these results show. 
+Do cities without the court-ordered hiring quotas have higher, lower, or similar average proportions of African American police officers, compared to the untreated cities in the post period? What study design did you use here?
+
+Compare the standard deviations of these proportions in each group - is the spread in these proportions similar? 
+Create a side-by-side boxplot to show the 
+distributions of the percentage of African American police officers in the 
+intervention and non-intervention cities in the post period. Describe what you learn from this figure.
+
+## Answer 2 Code
+
+```{r}
+# filtering to post period and then finding the average in treatment and control groups
+quotas.90 <- quotas %>%
+  filter(year == 1990)
+tapply(quotas.90$prop_police_blk, quotas.90$order, mean)
+# Average proportions and the standard deviations
+quotas.90 %>%
+  group_by(order) %>%
+  summarize_at(vars(prop_police_blk), funs(mean, sd))
+# Quantiles comparison across two groups 
+tapply(quotas.90$prop_police_blk, quotas.90$order, summary)
+# side-by-side boxplot
+quotas.90 %>%
+  ggplot(aes(y = prop_police_blk, x = factor(order))) + 
+  geom_boxplot()
+```
+
+## Answer 2 Text
+The average percentage (mean) of the BPO in cities with no quota is 15% while in cities with quota it is 20%. The standard deviation or spread of data from the mean is 16% in control group and 11% in treatment group. As more BPO added to the police department in treatment group cities, the average increased and with this increase the deviation from mean reduced since there are more BPO in this group whereas in the control group as there were less BPO, therefore the average was low and the deviation from mean was higher. 
+The cities without the court ordered hiring quota (control) have less average proportion of the BPO as compared to the cities which have court ordered quota (treatment Group) in the post period.
+Here we used post cross-sectional study design. As already mentioned about the spread or standard deviation across the two groups in not same, the sd is higher in control group as compared to the treatment group. 
+The median ages of the two groups are 11% (control) and 20% (treatment). For the control group, the range is around 83%, 1st quartile is 2%, 3rd quartile is 22%, IQR is 20% whereas in the treatment group range is 55%, 1st quartile is 12%, 3rd quartile is 26%, and IQR is 14%. There is one outlier above the higher tail of the distribution in the treatment group sitting at around 58% while 7 outliers in the control group above the higher tail in which the highest outlier is above 80% and there are gaps in the outliers. 
+Both the distributions are right skewed while the treatment group distribution is relatively less right skewed as compared to the control group. The treatment group distribution is symmetry in the middle (middle 50% of the observations) while slightly skew to the right in overall. The control group distribution is slightly left skewed in the middle while highly skewed to the right. Overall learning from the comparison of the two side by side boxplots is that the spread of data is high in the control group and the middle 50% data is even below the median of the treatment group. In the cities with  no quota there is more variation and even gaps while there is more coherence of application of quota order across the treatment cities.
+
+\newpage
+
+## Question 3 [8 pts]
+
+Consider just cities with court-ordered hiring quotas. Describe the distributions of 
+the percentage of African American police officers before (1960) and after (1990) the 
+imposition of the regulation. Conduct the comparison in terms of the mean, median, 
+and quartiles. Also create a figure to show the difference (or lack of a difference) in those two distributions. Calculate the average treatment effect. Explain your results in words. 
+
+What study design is this? How was the average MCF estimated? What assumption would have to hold for this estimate of the MCF to be unbiased? With this study design, name a confounder you think is likely to bias this estimate of the causal effect and state why you think it is a confounder.
+
+## Answer 3 Code
+
+```{r}
+quotas.cwq <- quotas %>%
+  filter(order == "Quota")
+tapply(quotas.cwq$prop_police_blk, quotas.cwq$year, mean)
+tapply(quotas.cwq$prop_police_blk, quotas.cwq$year, summary)
+
+quotas.cwq %>%
+  ggplot(aes(y = prop_police_blk, x = factor(year))) + 
+  geom_boxplot()
+
+quotas.cwq.60 <- quotas.cwq %>%
+  filter(year == 1960)
+mean(quotas.cwq.60$prop_police_blk)
+
+quotas.cwq.90 <- quotas.cwq %>%
+  filter(year == 1990)
+mean(quotas.cwq.90$prop_police_blk)
+mean(quotas.cwq.90$prop_police_blk)-mean(quotas.cwq.60$prop_police_blk)
+```
+
+## Answer 3 Text
+In the treatment cities, the percentage of BPO was 5% in 1960 while 20% in 1990 (after the imposition of court orders). In 1960, the range across the treatment cities was around 19%, median was 35%, 1st quartile was 2% and 3rd quartile was 7% with IQR of 5% while in 1990, the range was 55%, median was 19.4%, 1st quartile was 12% and 3rd quartile was 26% with IQR 14%. Comparison of the two boxplots of the treatment cities shows right skewed distributions for both of the with outliers above the right tails. In 1960, the boxplot shows much lesser median as compared to the 1990 and the middle 50% distribution in 1960 is left skewed while it is almost symmetric in this middle 50% in 1990. The average treatment effect in 1990 shows 15% increase in percentage of BPOs than the average proportion of the police officers in the treatment cities in 1960. Means that after the court orders in the treatment cities, the proportion of BPOs increased by 15% in 1990 compared to 1960. 
+This is pre-post study design in which only the intervention group - the cities with treatment- are studied. In this study design, the average MCF is estimated through finding the average factual of the pre-treatment time considering all else remained the same in this treatment group. The assumptions for estimation of MCF to remain unbiased are that the outcome would have remained exactly the same i.e no changes due to treatment condition of quota and no other changes over time. 
+Out of several other confounders, the changes in the proportion of black population in these cities due to migration because of better job prospects can be a strong confounder which is likely to bias the estimate of the causal effect. 
+\newpage
+
+## Question 4 [5 pts]
+
+Using a difference-in-differences study design, what is the the specific causal question? How is the average MCF estimated in a DiD design? How is the DiD treatment estimate calculated? 
+
+Now calculate the difference-in-differences estimate. Give a brief interpretation of this result.
+  
+## Answer 4 Code
+
+```{r}
+quotas.cwq <- quotas %>%
+  filter(order == "Quota")
+quotas.cwqchange <- mean(quotas.cwq.90$prop_police_blk) - 
+  mean(quotas.cwq.60$prop_police_blk)
+
+
+quotas.nq <- quotas %>%
+  filter(order == "No Quota")
+quotas.nq.90 <- quotas.nq %>%
+  filter(year == 1990)
+quotas.nq.60 <- quotas.nq %>%
+  filter(year == 1960)
+quotas.nqchange <- mean(quotas.nq.90$prop_police_blk) - 
+  mean(quotas.nq.60$prop_police_blk)
+
+# Difference-in-differences
+quotas.cwqchange - quotas.nqchange
+
+```
+
+## Answer 4 Text
+SCQ: What is the impact of having quota relative to no quota on the change in percentage of the BPOs (pre to post treatment effect) in the police department in the US cities. The average MCF in a DiD design (what the average prepost change in the percentage of BPOs would have been in the cities with treatment if there was no quota implemented there) is estimated as the average pre-post change in outcomes for the alternate group (here cities with no quota implementation). The DiD treatment estimate is calculated by subtracting the prepost change in the control group from the prepost change in the treatment group for which we first find the prepost change in the treatment group and the control groups. 
+The DiD estimate says that having the quota implemented causes a small 3.5% increase in the percentage of BPOs relative to no quota implementation in the police departments in the US cities from 1960 to 1990. 
+\newpage
+
+## Question 5 [5 pts]
+
+Compare the distribution of region for the intervention group and the non-intervention group. What are the possible implications of any differences in these distributions of region for whether the estimate of the average MCF in Q2 may be biased?  What are the possible implications of any differences in these distributions of region for whether the estimate of the average MCF in Q4 may be biased?
+  
+## Answer 5 Code
+
+```{r}
+proportions(table(quotas.cwq$region))
+proportions(table(quotas.nq$region))
+```
+
+## Answer 5 Text
+In the treatment group the respective proportion across the five regions are: 19%, 18%, 13%, 32%, 18% while in the control group it is: 20%, 22%, 18%, 21%, and 21%. There is relatively small changes across regions 1, 2, and 5 while medium change in region 3 (5%) and more change in region 4 where the difference between the treatment and the control groups is 11%. 
+It will create a bais and will be a confounder in the Q2 where the study design is post only because this is linked to the outcome in the post period. Also in Q4, it will create bais because this baseline covariate is different in the two groups and is also linked to the outcome therefore the assumption that all else between the two groups remain same is not true here. 
+\newpage
+
+## Question 6 [6 pts]
+
+Compare the means and standard deviations of three different baseline covariates: police_size, pop, and prop_black between the intervention and non-intervention police departments.  What are the possible implications of any differences in these means and standard deviations for whether the estimate of the average MCF in Q2 may be biased?  What are the possible implications of any differences in these distributions of region for whether the estimate of the average MCF in Q4 may be biased?
+  
+## Answer 6 Code
+
+```{r}
+quotas.cwq %>%
+  group_by(order) %>%
+  summarize_at(c("police_size", "pop", "prop_black"), funs(mean, sd))
+quotas.nq %>%
+  group_by(order) %>%
+  summarize_at(c("police_size", "pop", "prop_black"), funs(mean, sd))
+
+```
+
+## Answer 6 Text
+In the treatment group the mean and sd of three variables of police_size, pop, and prop_black are: (5.4 and .4), (5.7 and 13), (.3 and .2) while those of control groups are (5.2 and .41), (.20 and 2.4), and (2.4 and .2). While there are small differences in the mean and sd for police size and prop_black, at the same time there are higher differences between the mean and sd in pop across the treatment and control groups. Possibly there is migration in the treatment groups after the court orders which caused these changes and this confounder cause bias in the estimates of the MCF in Q2 and Q4 as the assumption that the two groups are same on baseline covariates does not hold true because of this confounder. 
