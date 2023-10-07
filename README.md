@@ -1,5 +1,5 @@
 # RP-3 with R
-## The Effect of Court-Ordered Hiring Quotas onthe Composition of Police
+## The Effect of Court-Ordered Hiring Quotas on the Composition of Police
 
 In McCrary’s 2007 AER paper, he argued that the series of
 court-ordered racial hiring quotas imposed on municipal police
